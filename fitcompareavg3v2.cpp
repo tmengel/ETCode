@@ -751,7 +751,7 @@ int fitcompareavg3v2(){
 		    << centrality << "\t"
 		    << avgET <<  "\t"
 		    << avgET_err <<  "\t"
-		    << avgETfiterr <<  "\t"
+		    << avgETfitErr <<  "\t"
 		    << avgN <<  "\t"
 		    << avgN_err <<  "\t"
 		    << avgNpart <<  "\t"
