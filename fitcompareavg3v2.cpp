@@ -36,7 +36,6 @@ Double_t getdNdyIntegrandHAGE(Double_t* myPt, Double_t* par);
 
 
 
-
 // main function:
 int fitcompareavg3v2(){
 	std::ofstream avg ("avgfitResults.dat", std::ofstream::app);
@@ -76,6 +75,7 @@ int fitcompareavg3v2(){
 
 	int breakOutForTesting =0;
 	int stop =150; // breakOut after this many iterations (if achieved); default: 140
+	Bool_t test = kFALSE;
 	cout << "Flag" << endl;
 	while((mikey=(TKey*)next())){
 	  breakOutForTesting++;
@@ -88,6 +88,11 @@ int fitcompareavg3v2(){
 			continue;
 		}
 
+		h = (TH1D*)mikey->ReadObj();
+		string histoName = h->GetName();
+		std::string str1 ("cent6_ka+_Au+Au_11.5");
+		if(test && str1.compare(histoName) != 0) continue;
+		cout << "Histo iter: " << breakOutForTesting+1<<" name "<<histoName.c_str() << endl;
 			
 		Double_t avgET=0.0;
 		Double_t avgET_err=0.0;
@@ -168,9 +173,9 @@ int fitcompareavg3v2(){
 		c1->Update();
 	
 		// read histogram object for current iteration of key:
-		h = (TH1D*)mikey->ReadObj();
+		//h = (TH1D*)mikey->ReadObj();
 			
-		string histoName = h->GetName();
+		//string histoName = h->GetName();
 		Double_t collEn = 0.;// initialize
 		//cent8_ka+_Au+Au_7.7 // sample histo name
 		if(histoName.substr( histoName.length() - 4 ) == "_7.7") collEn = 7.7;
@@ -299,16 +304,30 @@ int fitcompareavg3v2(){
 		HAGE->FixParameter(4,type);
 		}
 	
+		  funcBGBW->SetParLimits(1,0.0,0.99);//beta
+		  funcBGBW2->SetParLimits(1,0.0,0.99);//beta
+		  funcBGBW2->SetParLimits(2,.01,.2);//temp
+		  funcBGBW2->SetParLimits(3,0.01,100);//n
+		  HAGE->SetParLimits(3,.5,500000.); // norm
+		  HAGE->SetParLimits(2,0.5,200.); // temp
+		if(histoName=="cent6_ka+_Au+Au_11.5"){
+		  funcBGBW->SetParameters(mass,0.75,0.08,1,2e4,type);
+		  funcBGBW->SetParLimits(3,0.001,100);//n
+		}
 		ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(20000);
 		TFitResultPtr r = h->Fit("getdNdpt","S","",0.00000000000001,10.);
 		Double_t meanpt1= funcBGBW->GetHistogram()->GetMean();
+
+		if(gMinuit->fLimset) cout<<"Histogram "<<h->GetName()<<" hits limit on BW1"<<endl; 
 		
 		TFitResultPtr l = h->Fit("getdNdpt2","S+","",0.00000000000001,10.);
 	        //g->Fit("getdNdpt2","S","",0.00000000000001,10.);
 		Double_t meanpt2 = funcBGBW2->GetHistogram()->GetMean();
+		if(gMinuit->fLimset) cout<<"Histogram "<<h->GetName()<<" hits limit on BW2"<<endl;
 
 		TFitResultPtr p = h->Fit("getdNdptHAGE","S+","",0.000000000001,10.);
 		Double_t meanpt3= HAGE->GetHistogram()->GetMean();
+		if(gMinuit->fLimset) cout<<"Histogram "<<h->GetName()<<" hits limit on Hagedorn"<<endl;
 	
 			
 		Double_t chi2Prob = r->Prob();
@@ -710,10 +729,20 @@ int fitcompareavg3v2(){
 	h->GetXaxis()->SetRangeUser(0.,10.);
 	c1->Update();
 	
-		avgET=(dETdEtaTotal2+dETdEtaTotal+dETdEtaTotalH)/3.0;
-		avgET_err=(dETdEtaTErrH+dETdEtaTErr+dETdEtaTErr2)/3.0;
-		avgN=(dNdEtaTotalH+dNdEtaTotal2 +dNdEtaTotal)/3.0;
-		avgN_err=(dNdEtaTErrH+dNdEtaTErr2 +dNdEtaTErr)/3.0;
+
+	Double_t diffBW = TMath::Abs((dETdEtaTotalH)-dETdEtaTotal)/(dETdEtaTotalH);
+	Double_t diffBW2 = TMath::Abs((dETdEtaTotal+dETdEtaTotalH)/2.0-dETdEtaTotal2)/(dETdEtaTotal+dETdEtaTotalH)*2.0;
+	Double_t diffH = TMath::Abs((dETdEtaTotal)-dETdEtaTotalH)/(dETdEtaTotal);
+	cout<<breakOutForTesting<<" : "<<h->GetName()<<": BW: Chi^2: "<<chi2BGBW<<" : NDF: "<<nDFBGBW<<" : Chi^2/NDF: "<<chi2BGBW/nDFBGBW<<" : Diff : "<<diffBW<<endl;
+	//cout<<breakOutForTesting<<" : "<<h->GetName()<<": BW2: Chi^2: "<<chi2BGBW2<<" : NDF: "<<nDFBGBW2<<" : Chi^2/NDF: "<<chi2BGBW2/nDFBGBW2<<" : Diff : "<<diffBW<<endl;
+	cout<<breakOutForTesting<<" : "<<h->GetName()<<": Hagedorn: Chi^2: "<<chi2BGBWH<<" : NDF: "<<nDFBGBW2H<<" : Chi^2/NDF: "<<chi2BGBWH/nDFBGBW2H<<" : Diff : "<<diffBW<<endl;
+
+		avgET=(dETdEtaTotal+dETdEtaTotalH)/2.0;
+		avgET_err=(dETdEtaTErrH+dETdEtaTErr)/2.0;//averages the error in the points/fit.  Probably OK, especially since it looks like the fits actually pretty much agree and have small uncertainties
+		Double_t avgETfitErr=TMath::Abs(dETdEtaTotal-dETdEtaTotalH)/2.0;
+		avgN=(dNdEtaTotalH +dNdEtaTotal)/2.0;
+		avgN_err=(dNdEtaTErrH +dNdEtaTErr)/2.0;
+		//This part doesn't really mean anything since the Nparts are coming from the same place...
 	 	avgNpart=(NpartH+Npart+Npart2)/3.0;;
 		avgNpart_err=(NpartErr+NpartErr2+NpartErrH)/3.0;
 		
@@ -722,6 +751,7 @@ int fitcompareavg3v2(){
 		    << centrality << "\t"
 		    << avgET <<  "\t"
 		    << avgET_err <<  "\t"
+		    << avgETfiterr <<  "\t"
 		    << avgN <<  "\t"
 		    << avgN_err <<  "\t"
 		    << avgNpart <<  "\t"
@@ -732,6 +762,7 @@ int fitcompareavg3v2(){
 		png->FromPad(c1);
 		const char* imgPathAndNameConstCharPtr = imgPathAndName.c_str();
 		png->WriteImage(imgPathAndNameConstCharPtr);
+		if(test) return 0;
 		mikey->DeleteBuffer();// works!
 	
 		if(breakOutForTesting>=stop) break;

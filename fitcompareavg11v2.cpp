@@ -298,17 +298,27 @@ int fitcompareavg11v2(){
 		HAGE->FixParameter(0,mass);// mass in GeV
 		HAGE->FixParameter(4,type);
 		}
+		  funcBGBW->SetParLimits(1,0.0,0.99);//beta
+		  funcBGBW2->SetParLimits(1,0.0,0.99);//beta
+		  funcBGBW2->SetParLimits(2,.01,.2);//temp
+		  funcBGBW2->SetParLimits(3,0.01,100);//n
+		  HAGE->SetParLimits(3,.5,500000.); // norm
+		  HAGE->SetParLimits(2,0.5,2000.); // temp
 	
 		ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(20000);
 		TFitResultPtr r = h->Fit("getdNdpt","S","",0.00000000000001,10.);
 		Double_t meanpt1= funcBGBW->GetHistogram()->GetMean();
+
+		if(gMinuit->fLimset) cout<<"Histogram "<<h->GetName()<<" hits limit on BW1"<<endl; 
 		
 		TFitResultPtr l = h->Fit("getdNdpt2","S+","",0.00000000000001,10.);
 	        //g->Fit("getdNdpt2","S","",0.00000000000001,10.);
 		Double_t meanpt2 = funcBGBW2->GetHistogram()->GetMean();
+		if(gMinuit->fLimset) cout<<"Histogram "<<h->GetName()<<" hits limit on BW2"<<endl;
 
 		TFitResultPtr p = h->Fit("getdNdptHAGE","S+","",0.000000000001,10.);
 		Double_t meanpt3= HAGE->GetHistogram()->GetMean();
+		if(gMinuit->fLimset) cout<<"Histogram "<<h->GetName()<<" hits limit on Hagedorn"<<endl;
 	
 			
 		Double_t chi2Prob = r->Prob();
@@ -710,10 +720,20 @@ int fitcompareavg11v2(){
 	h->GetXaxis()->SetRangeUser(0.,10.);
 	c1->Update();
 	
-		avgET=(dETdEtaTotal2+dETdEtaTotal+dETdEtaTotalH)/3.0;
-		avgET_err=(dETdEtaTErrH+dETdEtaTErr+dETdEtaTErr2)/3.0;
-		avgN=(dNdEtaTotalH+dNdEtaTotal2 +dNdEtaTotal)/3.0;
-		avgN_err=(dNdEtaTErrH+dNdEtaTErr2 +dNdEtaTErr)/3.0;
+
+	Double_t diffBW = TMath::Abs((dETdEtaTotalH)-dETdEtaTotal)/(dETdEtaTotalH);
+	Double_t diffBW2 = TMath::Abs((dETdEtaTotal+dETdEtaTotalH)/2.0-dETdEtaTotal2)/(dETdEtaTotal+dETdEtaTotalH)*2.0;
+	Double_t diffH = TMath::Abs((dETdEtaTotal)-dETdEtaTotalH)/(dETdEtaTotal);
+	cout<<breakOutForTesting<<" : "<<h->GetName()<<": BW: Chi^2: "<<chi2BGBW<<" : NDF: "<<nDFBGBW<<" : Chi^2/NDF: "<<chi2BGBW/nDFBGBW<<" : Diff : "<<diffBW<<endl;
+	//cout<<breakOutForTesting<<" : "<<h->GetName()<<": BW2: Chi^2: "<<chi2BGBW2<<" : NDF: "<<nDFBGBW2<<" : Chi^2/NDF: "<<chi2BGBW2/nDFBGBW2<<" : Diff : "<<diffBW<<endl;
+	cout<<breakOutForTesting<<" : "<<h->GetName()<<": Hagedorn: Chi^2: "<<chi2BGBWH<<" : NDF: "<<nDFBGBW2H<<" : Chi^2/NDF: "<<chi2BGBWH/nDFBGBW2H<<" : Diff : "<<diffBW<<endl;
+
+		avgET=(dETdEtaTotal+dETdEtaTotalH)/2.0;
+		avgET_err=(dETdEtaTErrH+dETdEtaTErr)/2.0;//averages the error in the points/fit.  Probably OK, especially since it looks like the fits actually pretty much agree and have small uncertainties
+		avgETfitErr=TMath::Abs(dETdEtaTotal-dETdEtaTotalH)/2.0;
+		avgN=(dNdEtaTotalH +dNdEtaTotal)/2.0;
+		avgN_err=(dNdEtaTErrH +dNdEtaTErr)/2.0;
+		//This part doesn't really mean anything since the Nparts are coming from the same place...
 	 	avgNpart=(NpartH+Npart+Npart2)/3.0;;
 		avgNpart_err=(NpartErr+NpartErr2+NpartErrH)/3.0;
 		
@@ -722,6 +742,7 @@ int fitcompareavg11v2(){
 		    << centrality << "\t"
 		    << avgET <<  "\t"
 		    << avgET_err <<  "\t"
+		    << avgETfiterr <<  "\t"
 		    << avgN <<  "\t"
 		    << avgN_err <<  "\t"
 		    << avgNpart <<  "\t"
