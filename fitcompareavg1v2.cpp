@@ -327,7 +327,7 @@ int fitcompareavg1v2(){
 		  HAGE->SetParLimits(3,.5,500000.); // norm
 		  HAGE->SetParLimits(2,0.5,200.); // temp
 		  //}
-		if(histoName=="cent5_pi+_Au+Au_7.7"){
+		if(histoName=="cent6_pi+_Au+Au_7.7"){
 		  HAGE->SetParLimits(3,.5,50000000.); // norm
 		}
 		ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(20000);

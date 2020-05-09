@@ -75,6 +75,7 @@ int fitcompareavg4v2(){
 
 	int breakOutForTesting =0;
 	int stop =200; // breakOut after this many iterations (if achieved); default: 140
+	Bool_t test = kFALSE;
 	cout << "Flag" << endl;
 	while((mikey=(TKey*)next())){
 	  breakOutForTesting++;
@@ -87,6 +88,11 @@ int fitcompareavg4v2(){
 			continue;
 		}
 
+		h = (TH1D*)mikey->ReadObj();
+		string histoName = h->GetName();
+		std::string str1 ("cent5_proton_Au+Au_19.6");
+		if(test && str1.compare(histoName) != 0) continue;
+		cout << "Histo iter: " << breakOutForTesting+1<<" name "<<histoName.c_str() << endl;
 			
 		Double_t avgET=0.0;
 		Double_t avgET_err=0.0;
@@ -167,9 +173,6 @@ int fitcompareavg4v2(){
 		c1->Update();
 	
 		// read histogram object for current iteration of key:
-		h = (TH1D*)mikey->ReadObj();
-			
-		string histoName = h->GetName();
 		Double_t collEn = 0.;// initialize
 		//cent8_ka+_Au+Au_7.7 // sample histo name
 		if(histoName.substr( histoName.length() - 4 ) == "_7.7") collEn = 7.7;
@@ -303,6 +306,9 @@ int fitcompareavg4v2(){
 		//funcBGBW2->SetParLimits(3,0.01,100);//n
 		HAGE->SetParLimits(3,.5,500000.); // norm
 		HAGE->SetParLimits(2,0.5,2000.); // temp
+		HAGE->SetParameter(2,3.82640e0);
+		HAGE->SetParameter(3,3.16616e1);
+		HAGE->SetParameter(4,3.47419e2);
 	
 		ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(20000);
 		TFitResultPtr r = h->Fit("getdNdpt","S","",0.00000000000001,10.);
@@ -751,6 +757,7 @@ int fitcompareavg4v2(){
 		png->FromPad(c1);
 		const char* imgPathAndNameConstCharPtr = imgPathAndName.c_str();
 		png->WriteImage(imgPathAndNameConstCharPtr);
+		if(test) return 0;
 		mikey->DeleteBuffer();// works!
 	
 		if(breakOutForTesting>=stop) break;

@@ -77,6 +77,7 @@ int fitcompareavg11v2(){
 	int breakOutForTesting =0;
 	int stop =550; // breakOut after this many iterations (if achieved); default: 140
 	cout << "Flag" << endl;
+	Bool_t test = kFALSE;
 	while((mikey=(TKey*)next())){
 	  breakOutForTesting++;
 		if (breakOutForTesting<500) continue;// 140 histograms already analyzed
@@ -87,6 +88,12 @@ int fitcompareavg11v2(){
 			mikey->DeleteBuffer();
 			continue;
 		}
+
+		h = (TH1D*)mikey->ReadObj();
+		string histoName = h->GetName();
+		std::string str1 ("cent0_proton_Au+Au_200");
+		if(test && str1.compare(histoName) != 0) continue;
+		cout << "Histo iter: " << breakOutForTesting+1<<" name "<<histoName.c_str() << endl;
 
 			
 		Double_t avgET=0.0;
@@ -168,9 +175,6 @@ int fitcompareavg11v2(){
 		c1->Update();
 	
 		// read histogram object for current iteration of key:
-		h = (TH1D*)mikey->ReadObj();
-			
-		string histoName = h->GetName();
 		Double_t collEn = 0.;// initialize
 		//cent8_ka+_Au+Au_7.7 // sample histo name
 		if(histoName.substr( histoName.length() - 4 ) == "_7.7") collEn = 7.7;
@@ -293,8 +297,8 @@ int fitcompareavg11v2(){
 		HAGE->SetParameters(mass,1.,1.,5.,type);
 		HAGE->SetParNames("mass","A","temp","n","type");
 		HAGE->SetLineColor(kCyan);
-		HAGE->SetParLimits(2,50.,200.); // temp
-		HAGE->SetParLimits(3,5.,15.); // norm
+		//HAGE->SetParLimits(2,50.,200.); // temp
+		//HAGE->SetParLimits(3,5.,15.); // norm
 		HAGE->FixParameter(0,mass);// mass in GeV
 		HAGE->FixParameter(4,type);
 		}
@@ -302,8 +306,8 @@ int fitcompareavg11v2(){
 		  funcBGBW2->SetParLimits(1,0.0,0.99);//beta
 		  funcBGBW2->SetParLimits(2,.01,.2);//temp
 		  funcBGBW2->SetParLimits(3,0.01,100);//n
-		  HAGE->SetParLimits(3,.5,500000.); // norm
-		  HAGE->SetParLimits(2,0.5,2000.); // temp
+		  //HAGE->SetParLimits(3,.5,500000.); // norm
+		  //HAGE->SetParLimits(2,0.5,2000.); // temp
 	
 		ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(20000);
 		TFitResultPtr r = h->Fit("getdNdpt","S","",0.00000000000001,10.);
@@ -730,7 +734,7 @@ int fitcompareavg11v2(){
 
 		avgET=(dETdEtaTotal+dETdEtaTotalH)/2.0;
 		avgET_err=(dETdEtaTErrH+dETdEtaTErr)/2.0;//averages the error in the points/fit.  Probably OK, especially since it looks like the fits actually pretty much agree and have small uncertainties
-		avgETfitErr=TMath::Abs(dETdEtaTotal-dETdEtaTotalH)/2.0;
+		Double_t avgETfitErr=TMath::Abs(dETdEtaTotal-dETdEtaTotalH)/2.0;
 		avgN=(dNdEtaTotalH +dNdEtaTotal)/2.0;
 		avgN_err=(dNdEtaTErrH +dNdEtaTErr)/2.0;
 		//This part doesn't really mean anything since the Nparts are coming from the same place...
@@ -753,6 +757,7 @@ int fitcompareavg11v2(){
 		png->FromPad(c1);
 		const char* imgPathAndNameConstCharPtr = imgPathAndName.c_str();
 		png->WriteImage(imgPathAndNameConstCharPtr);
+		if(test) return 0;
 		mikey->DeleteBuffer();// works!
 	
 		if(breakOutForTesting>=stop) break;

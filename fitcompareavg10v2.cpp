@@ -75,6 +75,7 @@ int fitcompareavg10v2(){
 
 	int breakOutForTesting =0;
 	int stop =500; // breakOut after this many iterations (if achieved); default: 140
+	Bool_t test = kFALSE;
 	cout << "Flag" << endl;
 	while((mikey=(TKey*)next())){
 	  breakOutForTesting++;
@@ -87,6 +88,11 @@ int fitcompareavg10v2(){
 			continue;
 		}
 
+		h = (TH1D*)mikey->ReadObj();
+		string histoName = h->GetName();
+		std::string str1 ("cent8_proton_Au+Au_62.4");
+		if(test && str1.compare(histoName) != 0) continue;
+		cout << "Histo iter: " << breakOutForTesting+1<<" name "<<histoName.c_str() << endl;
 			
 		Double_t avgET=0.0;
 		Double_t avgET_err=0.0;
@@ -167,9 +173,6 @@ int fitcompareavg10v2(){
 		c1->Update();
 	
 		// read histogram object for current iteration of key:
-		h = (TH1D*)mikey->ReadObj();
-			
-		string histoName = h->GetName();
 		Double_t collEn = 0.;// initialize
 		//cent8_ka+_Au+Au_7.7 // sample histo name
 		if(histoName.substr( histoName.length() - 4 ) == "_7.7") collEn = 7.7;
@@ -292,8 +295,8 @@ int fitcompareavg10v2(){
 		HAGE->SetParameters(mass,1.,1.,5.,type);
 		HAGE->SetParNames("mass","A","temp","n","type");
 		HAGE->SetLineColor(kCyan);
-		HAGE->SetParLimits(2,50.,200.); // temp
-		HAGE->SetParLimits(3,5.,15.); // norm
+		//HAGE->SetParLimits(2,50.,200.); // temp
+		//HAGE->SetParLimits(3,5.,15.); // norm
 		HAGE->FixParameter(0,mass);// mass in GeV
 		HAGE->FixParameter(4,type);
 		}
@@ -301,8 +304,24 @@ int fitcompareavg10v2(){
 		  funcBGBW2->SetParLimits(1,0.0,0.99);//beta
 		  funcBGBW2->SetParLimits(2,.01,.2);//temp
 		  funcBGBW2->SetParLimits(3,0.01,100);//n
-		  HAGE->SetParLimits(3,.5,500000.); // norm
-		  HAGE->SetParLimits(2,0.5,2000.); // temp
+		  HAGE->SetParLimits(3,2e-3,5e9); // norm
+		  HAGE->SetParLimits(2,2e-3,2e5); // temp
+		if(particleID=="pro"||particleID=="pbar"){
+		  cout<<"I am here!"<<endl;
+		  HAGE->SetParameter(1,1);
+		  HAGE->SetParameter(2,50);
+		  HAGE->SetParameter(3,1e6);
+		  //HAGE->SetParLimits(1,1e-2,1e5); // norm
+		  //HAGE->SetParLimits(3,2,5e9); // norm
+		  //HAGE->SetParLimits(2,2e-3,2e4); // temp
+		  //funcBGBW->SetParLimits(2,2e-8,2e8);//temp
+		  //funcBGBW->SetParLimits(3,1e-2,1e2);//n
+		  //funcBGBW->SetParLimits(1,0.05,0.99);//beta
+		  //funcBGBW->SetParameters(mass,0.75,0.12,1,1e4,type);
+		  //funcBGBW->FixParameter(1,0.75);
+		  funcBGBW->FixParameter(2,0.12);
+		  //funcBGBW->SetParLimits(4,1e-4,1e4);//n
+		}
 	
 		ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(20000);
 		TFitResultPtr r = h->Fit("getdNdpt","S","",0.00000000000001,10.);
@@ -310,7 +329,7 @@ int fitcompareavg10v2(){
 
 		if(gMinuit->fLimset) cout<<"Histogram "<<h->GetName()<<" hits limit on BW1"<<endl; 
 		
-		TFitResultPtr l = h->Fit("getdNdpt2","S+","",0.00000000000001,10.);
+		TFitResultPtr l = r;//h->Fit("getdNdpt2","S+","",0.00000000000001,10.);
 	        //g->Fit("getdNdpt2","S","",0.00000000000001,10.);
 		Double_t meanpt2 = funcBGBW2->GetHistogram()->GetMean();
 		if(gMinuit->fLimset) cout<<"Histogram "<<h->GetName()<<" hits limit on BW2"<<endl;
@@ -729,7 +748,7 @@ int fitcompareavg10v2(){
 
 		avgET=(dETdEtaTotal+dETdEtaTotalH)/2.0;
 		avgET_err=(dETdEtaTErrH+dETdEtaTErr)/2.0;//averages the error in the points/fit.  Probably OK, especially since it looks like the fits actually pretty much agree and have small uncertainties
-		avgETfitErr=TMath::Abs(dETdEtaTotal-dETdEtaTotalH)/2.0;
+		Double_t avgETfitErr=TMath::Abs(dETdEtaTotal-dETdEtaTotalH)/2.0;
 		avgN=(dNdEtaTotalH +dNdEtaTotal)/2.0;
 		avgN_err=(dNdEtaTErrH +dNdEtaTErr)/2.0;
 		//This part doesn't really mean anything since the Nparts are coming from the same place...
@@ -752,6 +771,7 @@ int fitcompareavg10v2(){
 		png->FromPad(c1);
 		const char* imgPathAndNameConstCharPtr = imgPathAndName.c_str();
 		png->WriteImage(imgPathAndNameConstCharPtr);
+		if(test) return 0;
 		mikey->DeleteBuffer();// works!
 	
 		if(breakOutForTesting>=stop) break;
