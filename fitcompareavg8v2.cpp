@@ -90,7 +90,7 @@ int fitcompareavg8v2(){
 
 		h = (TH1D*)mikey->ReadObj();
 		string histoName = h->GetName();
-		std::string str1 ("cent0_proton_Au+Au_39");
+		std::string str1 ("cent0_pbar_Au+Au_39");
 		if(test && str1.compare(histoName) != 0) continue;
 		cout << "Histo iter: " << breakOutForTesting+1<<" name "<<histoName.c_str() << endl;
 
@@ -308,6 +308,11 @@ int fitcompareavg8v2(){
 		  funcBGBW2->SetParLimits(3,0.01,100);//n
 		  //HAGE->SetParLimits(3,.5,500000.); // norm
 		  //HAGE->SetParLimits(2,0.5,200.); // temp
+		  if(histoName=="cent1_pbar_Au+Au_39"){
+		    HAGE->SetParameter(1,2.52500);
+		    HAGE->SetParameter(2,37.7);
+		    HAGE->SetParameter(3,2.7e6);
+		  }
 		ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(20000);
 		TFitResultPtr r = h->Fit("getdNdpt","S","",0.00000000000001,10.);
 		Double_t meanpt1= funcBGBW->GetHistogram()->GetMean();
@@ -739,6 +744,7 @@ int fitcompareavg8v2(){
 	 	avgNpart=(NpartH+Npart+Npart2)/3.0;;
 		avgNpart_err=(NpartErr+NpartErr2+NpartErrH)/3.0;
 		
+		cout<<"BW "<<dETdEtaTotal<<" H "<<dETdEtaTotalH<<endl;
 		avg <<collEn << "\t"
 		    << particleID << "\t"
 		    << centrality << "\t"
