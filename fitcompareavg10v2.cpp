@@ -749,8 +749,12 @@ int fitcompareavg10v2(){
 		avgET=(dETdEtaTotal+dETdEtaTotalH)/2.0;
 		avgET_err=(dETdEtaTErrH+dETdEtaTErr)/2.0;//averages the error in the points/fit.  Probably OK, especially since it looks like the fits actually pretty much agree and have small uncertainties
 		Double_t avgETfitErr=TMath::Abs(dETdEtaTotal-dETdEtaTotalH)/2.0;
+		Double_t avgETy=(dETdyTotal+dETdyTotalH)/2.0;
+		Double_t avgETy_err=(dETdyTErrH+dETdyTErr)/2.0;//averages the error in the points/fit.  Probably OK, especially since it looks like the fits actually pretty much agree and have small uncertainties
+		Double_t avgETyfitErr=TMath::Abs(dETdyTotal-dETdyTotalH)/2.0;
 		avgN=(dNdEtaTotalH +dNdEtaTotal)/2.0;
 		avgN_err=(dNdEtaTErrH +dNdEtaTErr)/2.0;
+		Double_t avgNfitErr=TMath::Abs(dNdEtaTotal-dNdEtaTotalH)/2.0;
 		//This part doesn't really mean anything since the Nparts are coming from the same place...
 	 	avgNpart=(NpartH+Npart+Npart2)/3.0;;
 		avgNpart_err=(NpartErr+NpartErr2+NpartErrH)/3.0;
@@ -761,11 +765,15 @@ int fitcompareavg10v2(){
 		    << avgET <<  "\t"
 		    << avgET_err <<  "\t"
 		    << avgETfitErr <<  "\t"
+		    << avgETy <<  "\t"
+		    << avgETy_err <<  "\t"
+		    << avgETyfitErr <<  "\t"
 		    << avgN <<  "\t"
+		    << avgNfitErr <<  "\t"
 		    << avgN_err <<  "\t"
 		    << avgNpart <<  "\t"
 		    << avgNpart_err <<  "\n";
-	string imgPathAndName = "./fittedPlots55/"+histoName+".png";
+		string imgPathAndName = "./fittedPlots55/"+histoName+".png";
 				//c1 -> SaveAs("./fittedPlots/trial1.png");
 		TImage *png = TImage::Create();// FIXME try to use canvas method instead of png object
 		png->FromPad(c1);

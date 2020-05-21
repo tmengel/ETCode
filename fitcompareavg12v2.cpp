@@ -77,6 +77,7 @@ int fitcompareavg12v2(){
 	int breakOutForTesting =0;
 	int stop =600; // breakOut after this many iterations (if achieved); default: 140
 	cout << "Flag" << endl;
+	Bool_t test = kFALSE;
 	while((mikey=(TKey*)next())){
 	  breakOutForTesting++;
 		if (breakOutForTesting<550) continue;// 140 histograms already analyzed
@@ -87,6 +88,11 @@ int fitcompareavg12v2(){
 			mikey->DeleteBuffer();
 			continue;
 		}
+		h = (TH1D*)mikey->ReadObj();
+		string histoName = h->GetName();
+		std::string str1 ("cent0_omega_Au+Au_200");
+		if(test && str1.compare(histoName) != 0) continue;
+		cout << "Histo iter: " << breakOutForTesting+1<<" name "<<histoName.c_str() << endl;
 
 			
 		Double_t avgET=0.0;
@@ -168,9 +174,6 @@ int fitcompareavg12v2(){
 		c1->Update();
 	
 		// read histogram object for current iteration of key:
-		h = (TH1D*)mikey->ReadObj();
-			
-		string histoName = h->GetName();
 		Double_t collEn = 0.;// initialize
 		//cent8_ka+_Au+Au_7.7 // sample histo name
 		if(histoName.substr( histoName.length() - 4 ) == "_7.7") collEn = 7.7;
@@ -731,8 +734,12 @@ int fitcompareavg12v2(){
 		avgET=(dETdEtaTotal+dETdEtaTotalH)/2.0;
 		avgET_err=(dETdEtaTErrH+dETdEtaTErr)/2.0;//averages the error in the points/fit.  Probably OK, especially since it looks like the fits actually pretty much agree and have small uncertainties
 		Double_t avgETfitErr=TMath::Abs(dETdEtaTotal-dETdEtaTotalH)/2.0;
+		Double_t avgETy=(dETdyTotal+dETdyTotalH)/2.0;
+		Double_t avgETy_err=(dETdyTErrH+dETdyTErr)/2.0;//averages the error in the points/fit.  Probably OK, especially since it looks like the fits actually pretty much agree and have small uncertainties
+		Double_t avgETyfitErr=TMath::Abs(dETdyTotal-dETdyTotalH)/2.0;
 		avgN=(dNdEtaTotalH +dNdEtaTotal)/2.0;
 		avgN_err=(dNdEtaTErrH +dNdEtaTErr)/2.0;
+		Double_t avgNfitErr=TMath::Abs(dNdEtaTotal-dNdEtaTotalH)/2.0;
 		//This part doesn't really mean anything since the Nparts are coming from the same place...
 	 	avgNpart=(NpartH+Npart+Npart2)/3.0;;
 		avgNpart_err=(NpartErr+NpartErr2+NpartErrH)/3.0;
@@ -743,16 +750,21 @@ int fitcompareavg12v2(){
 		    << avgET <<  "\t"
 		    << avgET_err <<  "\t"
 		    << avgETfitErr <<  "\t"
+		    << avgETy <<  "\t"
+		    << avgETy_err <<  "\t"
+		    << avgETyfitErr <<  "\t"
 		    << avgN <<  "\t"
+		    << avgNfitErr <<  "\t"
 		    << avgN_err <<  "\t"
 		    << avgNpart <<  "\t"
 		    << avgNpart_err <<  "\n";
-	string imgPathAndName = "./fittedPlots55/"+histoName+".png";
+		string imgPathAndName = "./fittedPlots55/"+histoName+".png";
 				//c1 -> SaveAs("./fittedPlots/trial1.png");
 		TImage *png = TImage::Create();// FIXME try to use canvas method instead of png object
 		png->FromPad(c1);
 		const char* imgPathAndNameConstCharPtr = imgPathAndName.c_str();
 		png->WriteImage(imgPathAndNameConstCharPtr);
+		if(test) return 0;
 		mikey->DeleteBuffer();// works!
 	
 		if(breakOutForTesting>=stop) break;
