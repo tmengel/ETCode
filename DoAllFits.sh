@@ -3,6 +3,7 @@
 #After running this, do
 #perl WriteTannerOutput.pl
 #which parses the output and makes sure that it is all in the right order
+#You can also use makecheckingfile.sh written by makecheckingfile.pl to check that the fits worked in a semi-automated way.
 nice -n +19 root -b -q fitcompareavg1v2.cpp'(0,10)' >& fitoutput/textSTART0STOP10.txt
 nice -n +19 root -b -q fitcompareavg1v2.cpp'(10,20)' >& fitoutput/textSTART10STOP20.txt
 nice -n +19 root -b -q fitcompareavg1v2.cpp'(20,30)' >& fitoutput/textSTART20STOP30.txt
