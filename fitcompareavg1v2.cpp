@@ -38,18 +38,21 @@ Double_t getdNdyIntegrandHAGE(Double_t* myPt, Double_t* par);
 
 
 // main function:
-int fitcompareavg1v2(){
-	std::ofstream avg ("avgfitResults.dat", std::ofstream::out);
-	avg << "CollEn"<< "\t"
-			<<"Particle" << "\t"
-			<< "Cent" << "\t"
-			<< "dETdEta" << "\t" //dETdEta_d
-			<< "dETdEta_err"<< "\t" //dETdEta_d_err
-			<< "dNdEta\t"
-			<< "dNdEta_err\t"
-			<< "npart" << "\t" // dETdEtaTotal
-	                << "nparterr" << "\n";
-	
+int fitcompareavg1v2(int mystart = 0, int mystop = 50){
+  char filename[200];
+  sprintf(filename,"fitoutput/avgfitResultsStart%iStop%i.dat",mystart,mystop);
+	std::ofstream avg (filename, std::ofstream::out);
+// 	if(mystart==0){
+// 	  avg << "CollEn"<< "\t"
+// 	      <<"Particle" << "\t"
+// 	      << "Cent" << "\t"
+// 	      << "dETdEta" << "\t" //dETdEta_d
+// 	      << "dETdEta_err"<< "\t" //dETdEta_d_err
+// 	      << "dNdEta\t"
+// 	      << "dNdEta_err\t"
+// 	      << "npart" << "\t" // dETdEtaTotal
+// 	      << "nparterr" << "\n";
+// 	}
 	TFile* myFile = new TFile("ALLSTAR.root");
 	TIter next(myFile->GetListOfKeys());
 	TKey* mikey;
@@ -83,12 +86,13 @@ int fitcompareavg1v2(){
 
 
 	int breakOutForTesting =0;
-	int stop =50; // breakOut after this many iterations (if achieved); default: 140
+	int stop =mystop;//50; // breakOut after this many iterations (if achieved); default: 140
 	Bool_t test = kFALSE;
 	cout << "Flag" << endl;
 	while((mikey=(TKey*)next())){
 	  breakOutForTesting++;
-		if (breakOutForTesting<0) continue;// 140 histograms already analyzed
+	  //if (breakOutForTesting<0) continue;// 140 histograms already analyzed
+	  if (breakOutForTesting<mystart) continue;// 140 histograms already analyzed
 		///cout << "Histo iter: " << breakOutForTesting+1 << endl;
 		class1 = gROOT->GetClass(mikey->GetClassName());
 		if(!class1->InheritsFrom("TH1")){
@@ -330,13 +334,39 @@ int fitcompareavg1v2(){
 		if(histoName=="cent6_pi+_Au+Au_7.7"){
 		  HAGE->SetParLimits(3,.5,50000000.); // norm
 		}
+		if(histoName=="cent6_ka+_Au+Au_11.5"){
+		  funcBGBW->SetParameters(mass,0.75,0.08,1,2e4,type);
+		  funcBGBW->SetParLimits(3,0.001,100);//n
+		}
+                 if(histoName=="cent1_pbar_Au+Au_39"){
+                   HAGE->SetParameter(1,2.52500);
+                   HAGE->SetParameter(2,37.7);
+                   HAGE->SetParameter(3,2.7e6);
+                 }
+		 if((particleID=="ka-"||particleID=="ka+") && (collEn-62.4<0.1)){
+                 funcBGBW->SetParLimits(3,1e-5,1e5);//n    
+	       }
+                 if(histoName=="cent0_pbar_Au+Au_200"){
+                   HAGE->SetParameter(1,0.84);
+                   HAGE->SetParameter(2,10.8);
+                   HAGE->SetParameter(3,1.8e5);
+                 }
+		 if((particleID=="pro"||particleID=="pbar") && (collEn-130.0<0.1) ){
+		  cout<<"I am here!"<<endl;
+		  HAGE->SetParameter(1,1);
+		  HAGE->SetParameter(2,50);
+		  HAGE->SetParameter(3,1e6);
+		}
+
+
 		ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(20000);
 		TFitResultPtr r = h->Fit("getdNdpt","S","",0.00000000000001,10.);
 		Double_t meanpt1= funcBGBW->GetHistogram()->GetMean();
 
 		if(gMinuit->fLimset) cout<<"Histogram "<<h->GetName()<<" hits limit on BW1"<<endl; 
 		
-		TFitResultPtr l = h->Fit("getdNdpt2","S+","",0.00000000000001,10.);
+		//just skip BW2, we're not using it and it's a waste of CPU
+		TFitResultPtr l = r;//h->Fit("getdNdpt2","S+","",0.00000000000001,10.);
 	        //g->Fit("getdNdpt2","S","",0.00000000000001,10.);
 		Double_t meanpt2 = funcBGBW2->GetHistogram()->GetMean();
 		if(gMinuit->fLimset) cout<<"Histogram "<<h->GetName()<<" hits limit on BW2"<<endl;
